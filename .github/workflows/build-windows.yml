@@ -5,7 +5,7 @@ name: build-windows
 
 on:
   push:
-    branches: [redesign]
+    branches: [redesign, main]
     # documentation-only pushes (status, plans, notes) do not need a build
     paths-ignore:
       - 'redesign/**'
