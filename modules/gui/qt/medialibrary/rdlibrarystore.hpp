@@ -36,8 +36,9 @@
 
 #include "qt.hpp"
 #include "mlqmltypes.hpp"
+#include "medialib.hpp"
 
-class MediaLib;
+Q_DECLARE_OPAQUE_POINTER(MediaLib*)
 
 class RdLibraryStore : public QObject
 {
