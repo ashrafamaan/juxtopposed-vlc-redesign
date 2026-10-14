@@ -36,8 +36,6 @@
 #include "mlqmltypes.hpp"
 #include "medialib.hpp"
 
-Q_DECLARE_OPAQUE_POINTER(MediaLib*)
-
 struct vlc_medialibrary_t;
 struct vlc_ml_event_callback_t;
 struct vlc_ml_event_t;
