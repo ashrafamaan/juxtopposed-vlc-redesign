@@ -35,6 +35,7 @@ QtObject {
     readonly property bool settingsOpen: current === "playback" || current === "videoSettings"
                                          || current === "audioSettings" || current === "subtitleSettings"
     readonly property bool queueOpen: current === "queue" || current === "bookmarks" || current === "chapters"
+    readonly property bool libraryOpen: current === "library"
 
     function toggle(name) {
         current = (current === name) ? "" : name

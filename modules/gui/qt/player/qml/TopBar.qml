@@ -204,7 +204,12 @@ FocusScope{
                 Navigation.leftItem: menuSelector
                 Navigation.rightItem: folderChip
 
-                onClicked: root.backRequested()
+                onClicked: {
+                    if (MainCtx.mediaLibraryAvailable)
+                        RdPanels.toggle("library")
+                    else
+                        root.backRequested()
+                }
                 onHoveredChanged: root.requestLockUnlockAutoHide(hovered)
             }
 

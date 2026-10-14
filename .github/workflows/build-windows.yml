@@ -41,6 +41,14 @@ jobs:
         run: |
           SHA=$(extras/ci/get-contrib-sha.sh win64)
           URL="https://artifacts.videolan.org/vlc/win64/vlc-contrib-x86_64-w64-mingw32-${SHA}.tar.zst"
+          if ! extras/ci/check-url.sh "$URL"; then
+            FALLBACK_SHA="a5538c557d276378d5ba0f8f8010a8b87eaa6f78"
+            FALLBACK_URL="https://artifacts.videolan.org/vlc/win64/vlc-contrib-x86_64-w64-mingw32-${FALLBACK_SHA}.tar.zst"
+            if extras/ci/check-url.sh "$FALLBACK_URL"; then
+              SHA="$FALLBACK_SHA"
+              URL="$FALLBACK_URL"
+            fi
+          fi
           echo "sha=$SHA" >> "$GITHUB_OUTPUT"
           if extras/ci/check-url.sh "$URL"; then
             echo "url=$URL" >> "$GITHUB_OUTPUT"

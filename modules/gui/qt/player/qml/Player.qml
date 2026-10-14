@@ -1534,6 +1534,19 @@ FocusScope {
         z: 2
     }
 
+    // redesign: compact library sidebar docked on the left (Figma "Player.png", P5-23 / P5-25 / F-16)
+    Loader {
+        id: librarySidebarLoader
+        active: RdPanels.libraryOpen && MainCtx.mediaLibraryAvailable
+        visible: active
+        source: "qrc:///qt/qml/VLC/MediaLibrary/RdLibrarySidebar.qml"
+
+        anchors.left: parent.left
+        anchors.top: topBar.bottom
+        anchors.bottom: controlBar.top
+        z: 3
+    }
+
     property bool _panelLocked: false
 
     Connections {
