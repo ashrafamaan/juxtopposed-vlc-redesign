@@ -94,12 +94,13 @@ QMenu *BasicMenuContainer::newMenu()
     if (m_prevMenu)
     {
         setVisible(false);
-        m_prevMenu->disconnect(this);
+        disconnect(m_showConn);
+        disconnect(m_hideConn);
     }
 
     m_prevMenu = m;
-    connect(m, &QMenu::aboutToShow, this, [this](){ setVisible(true);});
-    connect(m, &QMenu::aboutToHide, this, [this](){ setVisible(false);});
+    m_showConn = connect(m, &QMenu::aboutToShow, this, [this](){ setVisible(true);});
+    m_hideConn = connect(m, &QMenu::aboutToHide, this, [this](){ setVisible(false);});
     return m;
 }
 

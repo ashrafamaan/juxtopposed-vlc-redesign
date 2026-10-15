@@ -1,4 +1,4 @@
-﻿/*****************************************************************************
+/*****************************************************************************
  * Copyright (C) 2023 VLC authors and VideoLAN
  *
  * This program is free software; you can redistribute it and/or modify
@@ -21,6 +21,8 @@
 #include <QItemSelectionModel>
 #include <QVector>
 #include <QPointer>
+#include <QMetaObject>
+#include <QList>
 
 class ListSelectionModel : public QItemSelectionModel
 {
@@ -47,6 +49,7 @@ class ListSelectionModel : public QItemSelectionModel
     
 public:
     explicit ListSelectionModel(QAbstractItemModel *model = nullptr, QObject *parent = nullptr);
+    ~ListSelectionModel() override;
 
     int currentIndexInt() const;
     QVector<int> selectionFlat() const;
@@ -101,7 +104,7 @@ private:
         QVector<int> selectedIndexes;
     } mutable m_cache;
 
-    mutable QPointer<const QAbstractItemModel> m_oldModel;
+    QList<QMetaObject::Connection> m_modelConnections;
 
     void updateSelectedIndexes() const;
     void updateSortedSelectedIndexes() const;

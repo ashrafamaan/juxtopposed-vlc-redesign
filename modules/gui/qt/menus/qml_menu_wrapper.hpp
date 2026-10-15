@@ -83,6 +83,8 @@ private:
 
     bool m_visible = false;
     QPointer<QMenu> m_prevMenu;
+    QMetaObject::Connection m_showConn;
+    QMetaObject::Connection m_hideConn;
 };
 
 class StringListMenu : public BasicMenuContainer

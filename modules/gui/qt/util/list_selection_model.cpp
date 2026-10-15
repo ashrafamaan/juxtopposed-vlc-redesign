@@ -23,22 +23,19 @@ ListSelectionModel::ListSelectionModel(QAbstractItemModel *model, QObject *paren
     : QItemSelectionModel{model, parent}
 {
     connect(this, &QItemSelectionModel::modelChanged, this, [this](const QAbstractItemModel * const model) {
-        if (m_oldModel)
-        {
-            m_oldModel->disconnect(this);
-        }
-
-        m_oldModel = model;
+        for (const auto &conn : m_modelConnections)
+            disconnect(conn);
+        m_modelConnections.clear();
 
         if (model)
         {
             // For some reason, even if QItemSelectionModel changes its selection based on the changes
             // in the target model it does not emit changed signal itself.
-            connect(model, &QAbstractItemModel::rowsAboutToBeRemoved, this, &ListSelectionModel::invalidateCache);
-            connect(model, &QAbstractItemModel::rowsAboutToBeInserted, this, &ListSelectionModel::invalidateCache);
-            connect(model, &QAbstractItemModel::rowsAboutToBeMoved, this, &ListSelectionModel::invalidateCache);
-            connect(model, &QAbstractItemModel::layoutChanged, this, &ListSelectionModel::invalidateCache);
-            connect(model, &QAbstractItemModel::modelReset, this, &ListSelectionModel::invalidateCache);
+            m_modelConnections.append(connect(model, &QAbstractItemModel::rowsAboutToBeRemoved, this, &ListSelectionModel::invalidateCache));
+            m_modelConnections.append(connect(model, &QAbstractItemModel::rowsAboutToBeInserted, this, &ListSelectionModel::invalidateCache));
+            m_modelConnections.append(connect(model, &QAbstractItemModel::rowsAboutToBeMoved, this, &ListSelectionModel::invalidateCache));
+            m_modelConnections.append(connect(model, &QAbstractItemModel::layoutChanged, this, &ListSelectionModel::invalidateCache));
+            m_modelConnections.append(connect(model, &QAbstractItemModel::modelReset, this, &ListSelectionModel::invalidateCache));
         }
 
         invalidateCache();
@@ -48,6 +45,13 @@ ListSelectionModel::ListSelectionModel(QAbstractItemModel *model, QObject *paren
 
     connect(this, &QItemSelectionModel::selectionChanged, this, &ListSelectionModel::_selectionChanged);
     connect(this, &QItemSelectionModel::currentChanged, this, &ListSelectionModel::_currentChanged);
+}
+
+ListSelectionModel::~ListSelectionModel()
+{
+    for (const auto &conn : m_modelConnections)
+        disconnect(conn);
+    m_modelConnections.clear();
 }
 
 int ListSelectionModel::currentIndexInt() const
