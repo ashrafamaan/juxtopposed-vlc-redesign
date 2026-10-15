@@ -192,8 +192,8 @@ bool RdLibraryItems::containsMrl(const QStringList& list, const QString& mrl)
 RdLibraryModel::RdLibraryModel(QObject* parent)
     : QAbstractListModel(parent)
     , m_eventCallback(nullptr, [this](vlc_ml_event_callback_t* cb) {
-        assert(m_mediaLib != nullptr);
-        m_mediaLib->unregisterEventListener(cb);
+        if (m_mediaLib && cb)
+            m_mediaLib->unregisterEventListener(cb);
     })
 {
     m_reloadTimer.setSingleShot(true);

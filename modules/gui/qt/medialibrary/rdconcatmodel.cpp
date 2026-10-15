@@ -24,11 +24,22 @@ RdConcatModel::RdConcatModel(QObject* parent)
     rebuildRoles();
 }
 
+RdConcatModel::~RdConcatModel()
+{
+    for (const auto& conn : m_firstConns)
+        disconnect(conn);
+    m_firstConns.clear();
+
+    for (const auto& conn : m_secondConns)
+        disconnect(conn);
+    m_secondConns.clear();
+}
+
 void RdConcatModel::setFirst(QAbstractItemModel* model)
 {
     if (m_first == model)
         return;
-    setSource(m_first, model);
+    setSource(m_first, m_firstConns, model);
     emit firstChanged();
 }
 
@@ -36,18 +47,20 @@ void RdConcatModel::setSecond(QAbstractItemModel* model)
 {
     if (m_second == model)
         return;
-    setSource(m_second, model);
+    setSource(m_second, m_secondConns, model);
     emit secondChanged();
 }
 
-void RdConcatModel::setSource(QPointer<QAbstractItemModel>& slot, QAbstractItemModel* model)
+void RdConcatModel::setSource(QPointer<QAbstractItemModel>& slot, QList<QMetaObject::Connection>& conns, QAbstractItemModel* model)
 {
     beginResetModel();
-    if (slot)
-        disconnect(slot, nullptr, this, nullptr);
+    for (const auto& conn : conns)
+        disconnect(conn);
+    conns.clear();
+
     slot = model;
     if (model)
-        connectSource(model);
+        connectSource(model, conns);
     rebuildRoles();
     endResetModel();
     emit countChanged();
@@ -151,67 +164,72 @@ QList<int> RdConcatModel::ownRoles(const QAbstractItemModel* model, const QList<
     return result;
 }
 
-void RdConcatModel::connectSource(QAbstractItemModel* model)
+void RdConcatModel::connectSource(QAbstractItemModel* model, QList<QMetaObject::Connection>& conns)
 {
-    connect(model, &QAbstractItemModel::rowsAboutToBeInserted, this,
+    conns.append(connect(model, &QAbstractItemModel::rowsAboutToBeInserted, this,
             [this, model](const QModelIndex& parent, int first, int last) {
         if (parent.isValid())
             return;
         const int offset = offsetOf(model);
         beginInsertRows({}, offset + first, offset + last);
-    });
-    connect(model, &QAbstractItemModel::rowsInserted, this, [this](const QModelIndex& parent) {
+    }));
+    conns.append(connect(model, &QAbstractItemModel::rowsInserted, this, [this](const QModelIndex& parent) {
         if (parent.isValid())
             return;
         endInsertRows();
         emit countChanged();
-    });
+    }));
 
-    connect(model, &QAbstractItemModel::rowsAboutToBeRemoved, this,
+    conns.append(connect(model, &QAbstractItemModel::rowsAboutToBeRemoved, this,
             [this, model](const QModelIndex& parent, int first, int last) {
         if (parent.isValid())
             return;
         const int offset = offsetOf(model);
         beginRemoveRows({}, offset + first, offset + last);
-    });
-    connect(model, &QAbstractItemModel::rowsRemoved, this, [this](const QModelIndex& parent) {
+    }));
+    conns.append(connect(model, &QAbstractItemModel::rowsRemoved, this, [this](const QModelIndex& parent) {
         if (parent.isValid())
             return;
         endRemoveRows();
         emit countChanged();
-    });
+    }));
 
     // moves and layout changes (sorting) are rare: the view reloads the visible rows
-    connect(model, &QAbstractItemModel::rowsAboutToBeMoved, this, [this]() { beginResetModel(); });
-    connect(model, &QAbstractItemModel::rowsMoved, this, [this]() {
+    conns.append(connect(model, &QAbstractItemModel::rowsAboutToBeMoved, this, [this]() { beginResetModel(); }));
+    conns.append(connect(model, &QAbstractItemModel::rowsMoved, this, [this]() {
         endResetModel();
         emit countChanged();
-    });
-    connect(model, &QAbstractItemModel::layoutAboutToBeChanged, this, [this]() { beginResetModel(); });
-    connect(model, &QAbstractItemModel::layoutChanged, this, [this]() {
+    }));
+    conns.append(connect(model, &QAbstractItemModel::layoutAboutToBeChanged, this, [this]() { beginResetModel(); }));
+    conns.append(connect(model, &QAbstractItemModel::layoutChanged, this, [this]() {
         endResetModel();
         emit countChanged();
-    });
-    connect(model, &QAbstractItemModel::modelAboutToBeReset, this, [this]() { beginResetModel(); });
-    connect(model, &QAbstractItemModel::modelReset, this, [this]() {
+    }));
+    conns.append(connect(model, &QAbstractItemModel::modelAboutToBeReset, this, [this]() { beginResetModel(); }));
+    conns.append(connect(model, &QAbstractItemModel::modelReset, this, [this]() {
         endResetModel();
         emit countChanged();
-    });
+    }));
 
-    connect(model, &QAbstractItemModel::dataChanged, this,
+    conns.append(connect(model, &QAbstractItemModel::dataChanged, this,
             [this, model](const QModelIndex& topLeft, const QModelIndex& bottomRight, const QList<int>& roles) {
         if (!topLeft.isValid() || !bottomRight.isValid())
             return;
         const int offset = offsetOf(model);
         emit dataChanged(index(offset + topLeft.row()), index(offset + bottomRight.row()),
                          ownRoles(model, roles));
-    });
+    }));
 
-    connect(model, &QObject::destroyed, this, [this]() {
+    const bool isFirst = (&conns == &m_firstConns);
+    conns.append(connect(model, &QObject::destroyed, this, [this, isFirst]() {
+        if (isFirst)
+            m_firstConns.clear();
+        else
+            m_secondConns.clear();
         // the QPointer is already cleared
         beginResetModel();
         rebuildRoles();
         endResetModel();
         emit countChanged();
-    });
+    }));
 }

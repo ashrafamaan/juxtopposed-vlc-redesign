@@ -109,7 +109,8 @@ RdLibraryStore::RdLibraryStore(qt_intf_t* intf, MediaLib* mediaLib, QObject* par
     , p_intf(intf)
     , m_mediaLib(mediaLib)
     , m_eventCallback(nullptr, [this](vlc_ml_event_callback_t* cb) {
-        m_mediaLib->unregisterEventListener(cb);
+        if (m_mediaLib && cb)
+            m_mediaLib->unregisterEventListener(cb);
     })
 {
     if (m_mediaLib)

@@ -39,6 +39,7 @@ class RdConcatModel : public QAbstractListModel
 
 public:
     explicit RdConcatModel(QObject* parent = nullptr);
+    ~RdConcatModel() override;
 
     QAbstractItemModel* first() const { return m_first; }
     QAbstractItemModel* second() const { return m_second; }
@@ -58,14 +59,16 @@ signals:
     void countChanged();
 
 private:
-    void setSource(QPointer<QAbstractItemModel>& slot, QAbstractItemModel* model);
-    void connectSource(QAbstractItemModel* model);
+    void setSource(QPointer<QAbstractItemModel>& slot, QList<QMetaObject::Connection>& conns, QAbstractItemModel* model);
+    void connectSource(QAbstractItemModel* model, QList<QMetaObject::Connection>& conns);
     void rebuildRoles();
     int offsetOf(const QAbstractItemModel* model) const;
     QList<int> ownRoles(const QAbstractItemModel* model, const QList<int>& sourceRoles) const;
 
     QPointer<QAbstractItemModel> m_first;
     QPointer<QAbstractItemModel> m_second;
+    QList<QMetaObject::Connection> m_firstConns;
+    QList<QMetaObject::Connection> m_secondConns;
 
     // own role -> name, and name -> role of each source
     QHash<int, QByteArray> m_roleNames;
