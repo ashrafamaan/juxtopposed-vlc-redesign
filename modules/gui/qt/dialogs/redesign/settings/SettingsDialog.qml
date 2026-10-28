@@ -38,7 +38,6 @@ import VLC.Style
 import VLC.Player
 import VLC.Widgets as Widgets
 import VLC.Dialogs
-import "pages"
 
 Item {
     id: root

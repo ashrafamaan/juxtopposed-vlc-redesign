@@ -171,7 +171,20 @@ bool MainUI::setup(QQmlEngine* engine)
     engine->addImageProvider(QStringLiteral("svgcolor"), new SVGColorImageImageProvider());
     engine->addImageProvider(QStringLiteral("vlcaccess"), new VLCAccessImageProvider());
 
-    m_component  = new QQmlComponent(engine, QStringLiteral("qrc:/qt/qml/VLC/MainInterface/MainInterface.qml"), QQmlComponent::PreferSynchronous, engine);
+    const char *qml_override = getenv("VLC_QML_PATH");
+    if (qml_override && qml_override[0])
+    {
+        const QString overridePath = QString::fromUtf8(qml_override).replace(QLatin1Char('\\'), QLatin1Char('/'));
+        engine->addImportPath(overridePath);
+        const QUrl mainInterfaceUrl = QUrl::fromLocalFile(overridePath + QStringLiteral("/maininterface/qml/MainInterface.qml"));
+        const QByteArray urlBytes = mainInterfaceUrl.toString().toUtf8();
+        msg_Dbg(m_intf, "Loading MainInterface from local disk override: %s", urlBytes.constData());
+        m_component = new QQmlComponent(engine, mainInterfaceUrl, QQmlComponent::PreferSynchronous, engine);
+    }
+    else
+    {
+        m_component = new QQmlComponent(engine, QStringLiteral("qrc:/qt/qml/VLC/MainInterface/MainInterface.qml"), QQmlComponent::PreferSynchronous, engine);
+    }
     if (m_component->isLoading())
     {
         msg_Warn(m_intf, "component is still loading");

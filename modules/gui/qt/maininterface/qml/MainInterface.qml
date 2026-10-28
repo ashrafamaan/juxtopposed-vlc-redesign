@@ -356,9 +356,7 @@ Item {
 
             anchors.fill: parent
             active: false
-            sourceComponent: Component {
-                SettingsDialog { }
-            }
+            source: "qrc:/qt/qml/VLC/Dialogs/SettingsDialog.qml"
 
             Connections {
                 target: DialogsProvider
