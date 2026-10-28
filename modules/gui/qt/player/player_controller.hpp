@@ -560,13 +560,12 @@ public:
         if (m_window == window)
             return;
 
-        if (m_window)
-            disconnect(m_window, nullptr, this, nullptr);
+        disconnect(m_windowConnection);
 
         m_window = window;
 
         if (m_window)
-            connect(m_window, &QQuickWindow::afterAnimating, this, &PlayerHighResolutionTimeUpdater::update); // emitted from GUI thread
+            m_windowConnection = connect(m_window, &QQuickWindow::afterAnimating, this, &PlayerHighResolutionTimeUpdater::update); // emitted from GUI thread
 
         emit windowChanged();
     }
@@ -617,6 +616,7 @@ signals:
 private:
     QPointer<PlayerController> m_playerController;
     QPointer<QQuickWindow> m_window;
+    QMetaObject::Connection m_windowConnection;
     QPointer<QQuickItem> m_item;
     QQmlProperty m_property;
     bool m_constantUpdates = true;

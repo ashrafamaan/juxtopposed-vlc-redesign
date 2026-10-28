@@ -45,6 +45,7 @@ MLBookmarkModel::MLBookmarkModel( QObject *parent )
 
 MLBookmarkModel::~MLBookmarkModel()
 {
+    disconnect(m_playerControllerConn);
     if(m_player && m_listener){
         vlc_player_locker lock{ m_player };
         vlc_player_RemoveListener( m_player, m_listener );
@@ -495,14 +496,14 @@ void MLBookmarkModel::setPlayer(PlayerController * player)
 {
     if (m_player_controller == player) return;
 
-    if (m_player_controller)
-        disconnect(m_player_controller, nullptr, this, nullptr);
+    disconnect(m_playerControllerConn);
 
     m_player_controller = player;
 
-    connect(m_player_controller, &PlayerController::lengthChanged, this, &MLBookmarkModel::playerLengthChanged);
+    if (m_player_controller)
+        m_playerControllerConn = connect(m_player_controller, &PlayerController::lengthChanged, this, &MLBookmarkModel::playerLengthChanged);
 
-    setPlayer(player->getPlayer());
+    setPlayer(player ? player->getPlayer() : nullptr);
 }
 
 MediaLib* MLBookmarkModel::ml() const

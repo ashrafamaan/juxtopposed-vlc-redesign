@@ -255,6 +255,9 @@ VLCDialogModel::VLCDialogModel(qt_intf_t* intf, QObject* parent)
 
 VLCDialogModel::~VLCDialogModel()
 {
+    for (const auto& conn : m_providerConnections)
+        disconnect(conn);
+    m_providerConnections.clear();
     m_shuttingDown = true;
     m_providerWait.wakeAll();
     vlc_dialog_provider_set_callbacks(m_intf, nullptr, nullptr);
@@ -276,30 +279,30 @@ void VLCDialogModel::setProvider(VLCDialog* provider)
 {
     if (m_provider == provider)
         return;
-    if (m_provider)
-    {
-        disconnect(m_provider, nullptr, this, nullptr);
-    }
+    for (const auto& conn : m_providerConnections)
+        disconnect(conn);
+    m_providerConnections.clear();
+
     m_provider = provider;
     if (m_provider)
     {
-        connect(m_provider, &VLCDialog::post_login,
+        m_providerConnections.append(connect(m_provider, &VLCDialog::post_login,
                 this, [](DialogId dialogId, const QString & username,
                         const QString & password, bool store){
                     vlc_dialog_id_post_login(dialogId.m_id, qtu(username), qtu(password), store);
-                });
-        connect(m_provider, &VLCDialog::post_action1,
+                }));
+        m_providerConnections.append(connect(m_provider, &VLCDialog::post_action1,
                 this, [](DialogId dialogId){
                     vlc_dialog_id_post_action(dialogId.m_id, 1);
-                });
-        connect(m_provider, &VLCDialog::post_action2,
+                }));
+        m_providerConnections.append(connect(m_provider, &VLCDialog::post_action2,
                 this, [](DialogId dialogId){
                     vlc_dialog_id_post_action(dialogId.m_id, 2);
-                });
-        connect(m_provider, &VLCDialog::dismiss,
+                }));
+        m_providerConnections.append(connect(m_provider, &VLCDialog::dismiss,
                 this, [](DialogId dialogId){
                     vlc_dialog_id_dismiss(dialogId.m_id);
-                });
+                }));
 
     }
     m_providerWait.wakeAll();

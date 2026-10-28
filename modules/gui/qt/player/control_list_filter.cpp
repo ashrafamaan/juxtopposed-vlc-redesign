@@ -33,6 +33,12 @@
     connect(this, &QAbstractProxyModel::sourceModelChanged, this, &ControlListFilter::sourceModelChanged1);
 }
 
+ControlListFilter::~ControlListFilter()
+{
+    for (const auto& conn : m_playerConnections)
+        disconnect(conn);
+}
+
 // QAbstractProxyModel reimplementation
 
 void ControlListFilter::setSourceModel(ControlListModel* sourceModel)
@@ -98,17 +104,18 @@ void ControlListFilter::setPlayer(PlayerController * player)
 {
     if (m_player == player) return;
 
-    if (m_player)
-        disconnect(m_player, nullptr, this, nullptr);
+    for (const auto& conn : m_playerConnections)
+        disconnect(conn);
+    m_playerConnections.clear();
 
     m_player = player;
 
     if (player)
     {
-        connect(player, &PlayerController::teletextAvailableChanged, this, &ControlListFilter::invalidateFilter);
-        connect(player, &PlayerController::hasMenuChanged,           this, &ControlListFilter::invalidateFilter);
-        connect(player, &PlayerController::hasChaptersChanged,       this, &ControlListFilter::invalidateFilter);
-        connect(player, &PlayerController::hasTitlesChanged,         this, &ControlListFilter::invalidateFilter);
+        m_playerConnections.append(connect(player, &PlayerController::teletextAvailableChanged, this, &ControlListFilter::invalidateFilter));
+        m_playerConnections.append(connect(player, &PlayerController::hasMenuChanged,           this, &ControlListFilter::invalidateFilter));
+        m_playerConnections.append(connect(player, &PlayerController::hasChaptersChanged,       this, &ControlListFilter::invalidateFilter));
+        m_playerConnections.append(connect(player, &PlayerController::hasTitlesChanged,         this, &ControlListFilter::invalidateFilter));
     }
 
     invalidate();

@@ -201,6 +201,7 @@ private:
     unsigned m_pendingDialog = 0;
 
     VLCDialog* m_provider = nullptr;
+    QList<QMetaObject::Connection> m_providerConnections;
     bool m_shuttingDown = false;
 
     friend class Singleton<VLCDialogModel>;

@@ -109,6 +109,7 @@ private:
     vlc_player_t* m_player = nullptr;
     vlc_player_listener_id* m_listener = nullptr;
     PlayerController* m_player_controller = nullptr;
+    QMetaObject::Connection m_playerControllerConn;
 
     // Assume to be only used from the GUI thread
     BookmarkListPtr m_bookmarks;

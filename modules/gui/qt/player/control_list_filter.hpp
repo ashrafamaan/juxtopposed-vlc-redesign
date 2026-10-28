@@ -45,6 +45,7 @@ class ControlListFilter : public QSortFilterProxyModel
 
 public:
     explicit ControlListFilter(QObject * parent = nullptr);
+    ~ControlListFilter() override;
 
     void setSourceModel(ControlListModel* sourceModel);
 
@@ -67,6 +68,7 @@ public: // Properties
 
 private: // Variables
     PlayerController * m_player = nullptr;
+    QList<QMetaObject::Connection> m_playerConnections;
     MainCtx* m_ctx = nullptr;
 };
 

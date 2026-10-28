@@ -180,7 +180,11 @@ bool MainUI::setup(QQmlEngine* engine)
     if (m_component->isError())
     {
         for(auto& error: m_component->errors())
-            msg_Err(m_intf, "qml loading %s %s:%u", qtu(error.description()), qtu(error.url().toString()), error.line());
+        {
+            const QByteArray desc = error.description().toUtf8();
+            const QByteArray url = error.url().toString().toUtf8();
+            msg_Err(m_intf, "qml loading %s %s:%u", desc.constData(), url.constData(), error.line());
+        }
 #ifdef QT_STATIC
             assert( !"Missing qml modules from qt contribs." );
 #else
