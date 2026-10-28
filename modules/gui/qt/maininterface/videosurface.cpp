@@ -335,6 +335,14 @@ void VideoSurface::itemChange(ItemChange change, const ItemChangeData &value)
     QQuickItem::itemChange(change, value);
 }
 
+VideoSurface::~VideoSurface()
+{
+    for (const auto &conn : m_providerConnections)
+        disconnect(conn);
+    m_providerConnections.clear();
+    disconnect(m_synchConnection);
+}
+
 void VideoSurface::setVideoSurfaceProvider(VideoSurfaceProvider *newVideoSurfaceProvider)
 {
     if (m_provider == newVideoSurfaceProvider)
@@ -342,9 +350,9 @@ void VideoSurface::setVideoSurfaceProvider(VideoSurfaceProvider *newVideoSurface
 
     if (m_provider)
     {
-        disconnect(this, nullptr, m_provider, nullptr);
-        disconnect(&m_wheelEventConverter, nullptr, m_provider, nullptr);
-        disconnect(m_provider, nullptr, this, nullptr);
+        for (const auto &conn : m_providerConnections)
+            disconnect(conn);
+        m_providerConnections.clear();
 
         assert(m_provider->videoSurface() == this);
         m_provider->setVideoSurface({});
@@ -357,25 +365,25 @@ void VideoSurface::setVideoSurfaceProvider(VideoSurfaceProvider *newVideoSurface
         if (const auto current = m_provider->videoSurface())
             current->setVideoSurfaceProvider(nullptr); // it is probably not a good idea to break the QML binding here
 
-        connect(this, &VideoSurface::mouseMoved, m_provider, &VideoSurfaceProvider::onMouseMoved);
-        connect(this, &VideoSurface::mousePressed, m_provider, &VideoSurfaceProvider::onMousePressed);
-        connect(this, &VideoSurface::mouseDblClicked, m_provider, &VideoSurfaceProvider::onMouseDoubleClick);
-        connect(this, &VideoSurface::mouseReleased, m_provider, &VideoSurfaceProvider::onMouseReleased);
-        connect(this, &VideoSurface::keyPressed, m_provider, &VideoSurfaceProvider::onKeyPressed);
-        connect(this, &VideoSurface::surfacePropertiesChanged, m_provider, &VideoSurfaceProvider::onSurfacePropertiesChanged, Qt::DirectConnection);
+        m_providerConnections.append(connect(this, &VideoSurface::mouseMoved, m_provider, &VideoSurfaceProvider::onMouseMoved));
+        m_providerConnections.append(connect(this, &VideoSurface::mousePressed, m_provider, &VideoSurfaceProvider::onMousePressed));
+        m_providerConnections.append(connect(this, &VideoSurface::mouseDblClicked, m_provider, &VideoSurfaceProvider::onMouseDoubleClick));
+        m_providerConnections.append(connect(this, &VideoSurface::mouseReleased, m_provider, &VideoSurfaceProvider::onMouseReleased));
+        m_providerConnections.append(connect(this, &VideoSurface::keyPressed, m_provider, &VideoSurfaceProvider::onKeyPressed));
+        m_providerConnections.append(connect(this, &VideoSurface::surfacePropertiesChanged, m_provider, &VideoSurfaceProvider::onSurfacePropertiesChanged, Qt::DirectConnection));
 
         // With auto connection, this should be queued if the signal was emitted from vout thread,
         // so that the slot is executed in item's thread:
-        connect(m_provider, &VideoSurfaceProvider::videoEnabledChanged, this, [this](bool enabled) {
+        m_providerConnections.append(connect(m_provider, &VideoSurfaceProvider::videoEnabledChanged, this, [this](bool enabled) {
             if (enabled)
             {
                 m_videoEnabledChanged = true;
                 if (flags().testFlag(ItemHasContents)) // "Only items which specify QQuickItem::ItemHasContents are allowed to call QQuickItem::update()."
                     update();
             }
-        });
+        }));
 
-        connect(&m_wheelEventConverter, &WheelToVLCConverter::vlcWheelKey, m_provider, &VideoSurfaceProvider::onMouseWheeled);
+        m_providerConnections.append(connect(&m_wheelEventConverter, &WheelToVLCConverter::vlcWheelKey, m_provider, &VideoSurfaceProvider::onMouseWheeled));
 
         assert(!m_provider->videoSurface());
         m_provider->setVideoSurface(this);

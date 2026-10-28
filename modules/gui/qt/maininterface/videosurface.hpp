@@ -93,6 +93,7 @@ class VideoSurface : public ViewBlockingRectangle
 
 public:
     VideoSurface( QQuickItem* parent = nullptr );
+    ~VideoSurface() override;
 
     VideoSurfaceProvider* videoSurfaceProvider() const { return m_provider; };
     void setVideoSurfaceProvider(VideoSurfaceProvider *newVideoSurfaceProvider);
@@ -138,6 +139,7 @@ private:
     WheelToVLCConverter m_wheelEventConverter;
 
     QPointer<VideoSurfaceProvider> m_provider;
+    QList<QMetaObject::Connection> m_providerConnections;
 
     QMetaObject::Connection m_synchConnection;
 
